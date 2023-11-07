@@ -1,0 +1,50 @@
+version: 0.2
+phases:
+  install:
+    commands:
+      - printenv
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 240993297305.dkr.ecr.ap-southeast-1.amazonaws.com
+      - REPOSITORY_URI=240993297305.dkr.ecr.ap-southeast-1.amazonaws.com/nodejs-express
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t $REPOSITORY_URI:latest -f Dockerfile.prod .
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker images...
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo Writing image definitions file...
+      - printf '[{"name":"node-fargate","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+artifacts:
+  files: imagedefinitions.json
+
+# printf '[{"name":"duongdx-react","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json : name must a similar with container_name in task definetion
+# addition role for code build
+# {
+#             "Sid": "VisualEditor0",
+#             "Effect": "Allow",
+#             "Action": [
+#                 "ecr:GetAuthorizationToken",
+#                 "ecr:BatchGetImage",
+#                 "ecr:BatchCheckLayerAvailability",
+#                 "ecr:CompleteLayerUpload",
+#                 "ecr:DescribeImages",
+#                 "ecr:DescribeRepositories",
+#                 "ecr:GetDownloadUrlForLayer",
+#                 "ecr:InitiateLayerUpload",
+#                 "ecr:ListImages",
+#                 "ecr:PutImage",
+#                 "ecr:UploadLayerPart"
+#             ],
+#             "Resource": "*"
+#         },
