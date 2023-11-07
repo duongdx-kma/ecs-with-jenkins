@@ -1,0 +1,1 @@
+curl --proto "https" -o "/tmp/ecs-anywhere-install.sh" "https://amazon-ecs-agent.s3.amazonaws.com/ecs-anywhere-install-latest.sh" && bash /tmp/ecs-anywhere-install.sh --region "ap-southeast-1" --cluster "express-app-ecs" --activation-id "37d63c3b-47aa-4071-8989-41277ed1704e" --activation-code "CwBzS8bAtXDb6BRMJNEJ"
