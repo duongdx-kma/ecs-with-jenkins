@@ -1,0 +1,9 @@
+version: 0.0
+Resources:
+  - TargetService:
+      Type: AWS:ECS:Service
+      Properties:
+        TaskDefinition: arn:aws:ecs:ap-southeast-1:240993297305:task-definition/nodejs-fargate:4
+        LoadBalancerInfo:
+          ContainerName: "node-fargate" # must be same container in service - task
+          ContainerPort: 8088
