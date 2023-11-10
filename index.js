@@ -1,7 +1,7 @@
 import express from 'express'
 import os from 'os'
 import data from './config/env.json' assert {type: 'json'}
-import {getSecret} from "./secret_manager";
+import {getSecret} from "./secret_manager.js";
 
 const app = express()
 
