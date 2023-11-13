@@ -13,6 +13,12 @@ phases:
       - REPOSITORY_URI=240993297305.dkr.ecr.ap-southeast-1.amazonaws.com/nodejs-express
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
+
+      # start generating environment variable
+      - npm install -g json
+      - chmod +x ./set-env.sh
+      - sh ./set-env.sh
+      - npm install
   build:
     commands:
       - echo Build started on `date`
