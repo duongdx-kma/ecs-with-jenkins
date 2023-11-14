@@ -1,0 +1,66 @@
+pipeline {
+    agent any
+
+    environment {
+   		registryCredential = 'ecr:ap-southeast-1:jenkins-user'
+    	appRegistry = '240993297305.dkr.ecr.ap-southeast-1.amazonaws.com/nodejs-express'
+    	registryURL = 'https://240993297305.dkr.ecr.ap-southeast-1.amazonaws.com'
+    	cluster = 'prod-ecs-demo'
+    	service = 'prod-ecs-service'
+    	task_family = 'nodejs-fargate-jenkins-git'
+    	buildNumber = 15
+    }
+
+    stages {
+        stage('fetching code') {
+            steps {
+                git branch: 'master', url: 'https://github.com/duongdx-kma/ecs-with-jenkins.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Build step ...'
+                sh '''
+                	echo "$BUILD_ID"
+                '''
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Test step ...'
+                sh '''
+                	echo "$BUILD_NUMBER"
+                '''
+            }
+        }
+
+        stage('Build App Image') {
+            steps {
+                echo '***************** build image *******************'
+            }
+        }
+
+        stage('Upload App Image') {
+            steps {
+                echo '***************** upload app image to registry *******************'
+            }
+        }
+
+        stage('Deploy to ECS') {
+            steps {
+                withAWS(credentials: 'jenkins-user', region: 'ap-southeast-1') {
+                    sh '''
+                        TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition $task_family --region ap-southeast-1)
+                        NEW_TASK_DEFINITION=$(echo $TASK_DEFINITION | jq --arg IMAGE $appRegistry:$buildNumber '.taskDefinition | .containerDefinitions[0].image = $IMAGE | del(.taskDefinitionArn) | del(.revision) | del(.status) | del(.requiresAttributes) | del(.compatibilities) |  del(.registeredAt)  | del(.registeredBy)')
+                        NEW_TASK_INFO=$(aws ecs register-task-definition --region ap-southeast-1 --cli-input-json "$NEW_TASK_DEFINITION")
+                        NEW_REVISION=$(echo $NEW_TASK_INFO | jq '.taskDefinition.revision')
+                        aws ecs update-service --cluster ${cluster} --service ${service} --task-definition ${task_family}:$NEW_REVISION --force-new-deploy
+                    '''
+                }
+            }
+        }
+    }
+}
+
