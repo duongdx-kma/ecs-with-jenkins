@@ -1,0 +1,55 @@
+# Use root/example as user/password credentials
+version: '3.1'
+
+services:
+  express:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: express
+    volumes:
+      - .:/app
+    depends_on:
+      - mongodb
+    ports:
+      - ${EXPRESS_PORT}:8088
+    networks:
+      mongodb-network:
+
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    restart: always
+    ports:
+      - ${MONGO_DB_PORT}:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${USER_NAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${USER_PASSWORD}
+    volumes:
+      - mongodb_data_container:/data/db
+    networks:
+      mongodb-network:
+
+  mongodb-express:
+    image: mongo-express
+    container_name: mongodb-express
+    restart: always
+    ports:
+      - ${MONGO_EXPRESS_PORT}:8081
+    environment:
+      ME_CONFIG_BASICAUTH_USERNAME: ${USER_NAME}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${USER_PASSWORD}
+
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${USER_NAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${USER_PASSWORD}
+      ME_CONFIG_MONGODB_URL: ${MONGODB_URL}
+    networks:
+      mongodb-network:
+
+networks:
+  mongodb-network:
+    driver: bridge
+
+volumes:
+  mongodb_data_container:
